@@ -15,18 +15,16 @@ export default class Session {
    * @example session.addNotification(notification)
    */
   addNotification(notification) {
-    const notifications = this.notifications;
-    const length = notifications.length;
-    if (length === 0) {
-      notifications.push(notification);
+    if (this.notifications.length === 0) {
+      this.notifications.push(notification);
     } else {
-      for (let index = 0; index < length; index += 1) {
-        if (notification.date < notifications[index].date) {
-          notifications.splice(index, 0, notification);
+      for (let index = 0; index < this.notifications.length; index += 1) {
+        if (notification.date < this.notifications[index].date) {
+          this.notifications.splice(index, 0, notification);
           return;
         }
       }
-      notifications.push(notification);
+      this.notifications.push(notification);
     }
   }
 
@@ -36,9 +34,8 @@ export default class Session {
    * @example session.deleteNotification(notification)
    */
   deleteNotification(notification) {
-    const notifications = this.notifications;
     const string = JSON.stringify(notification);
-    const index = notifications.findIndex((element) => JSON.stringify(element) === string);
-    notifications.splice(index, 1);
+    const index = this.notifications.findIndex((element) => JSON.stringify(element) === string);
+    this.notifications.splice(index, 1);
   }
 }

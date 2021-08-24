@@ -1,10 +1,19 @@
+import dotenv from 'dotenv';
+import fs from 'fs';
 import { Telegraf } from 'telegraf';
-import Session from './classes/Session.js';
-import Notification from './classes/Notification.js';
-import Notifier from './classes/Notifier.js';
 
-const token = '1726046745:AAEdw4bDsCW2VDMBP1bt5F4wgQ639AD8mIg';
-const bot = new Telegraf(token);
+import Session from './src/classes/Session.js';
+import Notification from './src/classes/Notification.js';
+import Notifier from './src/classes/Notifier.js';
+
+const locale = fs.readdirSync('./src/locale').reduce((json, file) => {
+  const value = JSON.parse(fs.readFileSync(`./src/locale/${file}`));
+  const key = file.substr(0, 2);
+  return { ...json, [key]: value };
+}, {});
+
+const config = dotenv.config().parsed;
+const bot = new Telegraf(config.TOKEN);
 const sessions = [];
 const notifier = new Notifier();
 
@@ -60,51 +69,6 @@ bot.start((ctx) => {
 //   session.addNotification(new Notification(Date.now() + 10000, 'ha'));
 // });
 
-const nameOfMonths = {
-  en: [
-    'January',
-    'February',
-    'March',
-    'April',
-    'May',
-    'June',
-    'July',
-    'August',
-    'September',
-    'October',
-    'November',
-    'December',
-  ],
-  pl: [
-    'Styczeń',
-    'Luty',
-    'Marzec',
-    'Kwiecień',
-    'Maj',
-    'Czerwiec',
-    'Lipiec',
-    'Sierpień',
-    'Wrzesień',
-    'Październik',
-    'Listopad',
-    'Grudzień',
-  ],
-  ru: [
-    'Январь',
-    'Февраль',
-    'Март',
-    'Апрель',
-    'Май',
-    'Июнь',
-    'Июль',
-    'Август',
-    'Сентябрь',
-    'Октябрь',
-    'Ноябрь',
-    'Декабрь',
-  ],
-};
-
 const createButton = (text, data) => ({ text, callback_data: JSON.stringify(data) });
 
 const createCalendar = (year, month) => {
@@ -128,7 +92,7 @@ const createCalendar = (year, month) => {
         name: 'Previous month',
         date: new Date(year, month).getTime(),
       }),
-      createButton(nameOfMonths['en'][month], {
+      createButton(locale.en.months[month], {
         name: 'Current month',
         date: new Date(year, month).getTime(),
       }),
