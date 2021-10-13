@@ -1,21 +1,19 @@
 import dotenv from 'dotenv';
-import fs from 'fs';
 import { Telegraf } from 'telegraf';
 
+import Locale from './src/classes/Locale.js';
 import Session from './src/classes/Session.js';
-import Notification from './src/classes/Notification.js';
 import Notifier from './src/classes/Notifier.js';
+import Notification from './src/classes/Notification.js';
+import UI from './src/classes/UI.js';
 
-const locale = fs.readdirSync('./src/locale').reduce((json, file) => {
-  const value = JSON.parse(fs.readFileSync(`./src/locale/${file}`));
-  const key = file.substr(0, 2);
-  return { ...json, [key]: value };
-}, {});
+Locale.loadFiles();
 
 const config = dotenv.config().parsed;
 const bot = new Telegraf(config.TOKEN);
 const sessions = [];
 const notifier = new Notifier();
+const ui = new UI();
 
 // Execution -  is a function, which executes on every notifier cicle
 const execution = () => {
@@ -49,176 +47,73 @@ const execution = () => {
 
 bot.start((ctx) => {
   const userID = ctx.update.message.from.id;
+  const language = ctx.update.message.from.language_code ?? 'en';
   if (!sessions.find((session) => session.userID === userID)) {
-    sessions.push(new Session(userID));
+    sessions.push(new Session(userID, language));
   }
-  ctx.reply('blank text', {
-    reply_markup: {
-      keyboard: [
-        ['Create', 'Delete'],
-        ['See all', 'Settings'],
-      ],
-      resize_keyboard: true,
-    },
-  });
+  ui.start(ctx);
 });
 
-// bot.hears('5', (ctx) => {
-//   const userID = ctx.update.message.from.id;
-//   const session = sessions.find((session) => session.userID === userID);
-//   session.addNotification(new Notification(Date.now() + 10000, 'ha'));
-// });
-
-const createButton = (text, data) => ({ text, callback_data: JSON.stringify(data) });
-
-const createCalendar = (year, month) => {
-  const keyboard = [
-    [
-      createButton('<', {
-        name: 'Previous year',
-        date: new Date(year, month).getTime(),
-      }),
-      createButton(year, {
-        name: 'Current year',
-        date: new Date(year, month).getTime(),
-      }),
-      createButton('>', {
-        name: 'Next year',
-        date: new Date(year, month).getTime(),
-      }),
-    ],
-    [
-      createButton('<', {
-        name: 'Previous month',
-        date: new Date(year, month).getTime(),
-      }),
-      createButton(locale.en.months[month], {
-        name: 'Current month',
-        date: new Date(year, month).getTime(),
-      }),
-      createButton('>', {
-        name: 'Next month',
-        date: new Date(year, month).getTime(),
-      }),
-    ],
-    [
-      createButton('mon', { name: 'Monday' }),
-      createButton('tue', { name: 'Tuesday' }),
-      createButton('wed', { name: 'Wednesday' }),
-      createButton('thu', { name: 'Thursday' }),
-      createButton('fri', { name: 'Friday' }),
-      createButton('sat', { name: 'Saturday' }),
-      createButton('sun', { name: 'Sunday' }),
-    ],
-  ];
-
-  // Month here is 1-indexed (January is 1, February is 2, etc). This is
-  // because we're using 0 as the day so that it returns the last day
-  // of the last month, so you have to add 1 to the month number
-  // so it returns the correct amount of days
-  const daysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
-  const firstDayOfMonth = new Date(year, month, 0).getDay();
-  const daysInCurrentMonth = daysInMonth(year, month);
-  const daysInPreviousMonth = daysInMonth(
-    month > 0 ? year : year - 1,
-    month > 0 ? month - 1 : 11,
-  );
-
-  const calendar = [];
-
-  for (let day = 0; day < 42; day += 1) {
-    const previousMonthDate = daysInPreviousMonth - day;
-    const currentMonthDate = day - firstDayOfMonth + 1;
-    const nextMonthDate = currentMonthDate - daysInCurrentMonth;
-    switch (true) {
-      case day < firstDayOfMonth:
-        calendar.unshift(
-          createButton(
-            previousMonthDate,
-            {
-              name: 'Date',
-              date: new Date(
-                month > 0 ? year : year - 1,
-                month > 0 ? month - 1 : 11,
-                previousMonthDate,
-              ).getTime(),
-            },
-          ),
-        );
-        break;
-      case day < daysInCurrentMonth + firstDayOfMonth:
-        calendar.push(
-          createButton(
-            currentMonthDate,
-            {
-              name: 'Date',
-              date: new Date(year, month, currentMonthDate).getTime(),
-            },
-          ),
-        );
-        break;
-      default:
-        calendar.push(
-          createButton(
-            nextMonthDate,
-            {
-              name: 'Date',
-              date: new Date(
-                month < 11 ? year : year + 1,
-                month < 11 ? month + 1 : 0,
-                nextMonthDate,
-              ).getTime(),
-            },
-          ),
-        );
-    }
-  }
-  while (calendar.length) keyboard.push(calendar.splice(0, 7));
-  return keyboard;
-};
-
 bot.hears('Create', (ctx) => {
-  const date = new Date();
-  const year = date.getFullYear();
-  const month = date.getMonth();
-  ctx.reply('Pick a date', {
-    reply_markup: {
-      inline_keyboard: createCalendar(year, month),
-    },
-  });
+  const userID = ctx.update.message.from.id;
+  const currentSession = sessions.find((session) => session.userID === userID);
+  ui.replyWithCalendar(ctx, currentSession);
 });
 
 bot.on('callback_query', async (ctx) => {
   await ctx.answerCbQuery();
+
   const data = JSON.parse(ctx.update.callback_query.data);
-  const date = new Date(data.date);
-  const year = date.getFullYear();
-  const month = date.getMonth();
+
+  const userID = ctx.update.callback_query.from.id;
+  const currentSession = sessions.find((session) => session.userID === userID);
+  const { draft } = currentSession;
+
   switch (true) {
-    case data.name === 'Next month':
-      await ctx.editMessageReplyMarkup({
-        inline_keyboard: createCalendar(
-          month < 11 ? year : year + 1,
-          month < 11 ? month + 1 : 0,
-        ),
-      });
+    case (data.sender === 'calendar' && data.method === 'update'):
+      ui.updateCalendar(ctx, currentSession);
       break;
-    case data.name === 'Previous month':
-      await ctx.editMessageReplyMarkup({
-        inline_keyboard: createCalendar(
-          month > 0 ? year : year - 1,
-          month > 0 ? month - 1 : 11,
-        ),
-      });
+    case (data.sender === 'calendar' && data.method === 'next'):
+      draft.date = data.date;
+      ui.replyWithTime(ctx, currentSession);
       break;
-    case data.name === 'Next year':
-      await ctx.editMessageReplyMarkup({ inline_keyboard: createCalendar(year + 1, month) });
+    case (data.sender === 'time' && data.method === 'update'):
+      ui.updateTime(ctx, currentSession);
       break;
-    case data.name === 'Previous year':
-      await ctx.editMessageReplyMarkup({ inline_keyboard: createCalendar(year - 1, month) });
+    case (data.sender === 'time' && data.method === 'next'):
+      draft.date = data.date;
+      ui.replyWithRepeat(ctx, currentSession);
+      break;
+    case (data.sender === 'repeat' && data.method === 'update'):
+      ui.updateRepeat(ctx, currentSession);
+      break;
+    case (data.sender === 'repeat' && data.method === 'next'):
+      draft.repeat = data.repeat;
+      ui.replyWithInterval(ctx, currentSession);
+      break;
+    case (data.sender === 'interval' && data.method === 'update'):
+      ui.updateInterval(ctx, currentSession);
+      break;
+    case (data.sender === 'interval' && data.method === 'next'):
+      draft.delay = data.delay;
+      ui.replyWithEnterText(ctx, currentSession);
       break;
     default:
-      console.log(data);
+  }
+});
+
+bot.on('message', (ctx) => {
+  const userID = ctx.update.message.from.id;
+  const currentSession = sessions.find((session) => session.userID === userID);
+  const { draft } = currentSession;
+
+  const isReply = !!ctx.update.message.reply_to_message;
+  if (isReply) {
+    draft.text = ctx.update.message.text;
+    currentSession.addNotification(draft);
+    ctx.reply('prinial');
+  } else {
+    ctx.reply('nie jebu szo tam');
   }
 });
 

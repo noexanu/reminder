@@ -12,5 +12,22 @@
     "October",
     "November",
     "December"
+  ],
+  "days": [
+    "mo",
+    "tu",
+    "we",
+    "th",
+    "fr",
+    "sa",
+    "su"
+  ],
+  "units": [
+    "minute",
+    "hour",
+    "day",
+    "week",
+    "month",
+    "year"
   ]
 }

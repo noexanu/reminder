@@ -12,5 +12,22 @@
     "Październik",
     "Listopad",
     "Grudzień"
+  ],
+  "days": [
+    "po",
+    "wt",
+    "śr",
+    "cz",
+    "pi",
+    "so",
+    "ni"
+  ],
+  "units": [
+    "minuta",
+    "godzina",
+    "dzień",
+    "tydzień",
+    "miesiąc",
+    "rok"
   ]
 }

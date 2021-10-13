@@ -1,19 +1,11 @@
 export default class Session {
-  /**
-   * @param {number} userID Unique user ID
-   *
-   * @example new Session()
-   */
-  constructor(userID) {
+  constructor(userID, language) {
     this.userID = userID;
+    this.language = language;
+    this.draft = {};
     this.notifications = [];
   }
 
-  /**
-   * @param {object} notification Notification object
-   *
-   * @example session.addNotification(notification)
-   */
   addNotification(notification) {
     if (this.notifications.length === 0) {
       this.notifications.push(notification);
@@ -28,14 +20,11 @@ export default class Session {
     }
   }
 
-  /**
-   * @param {object} notification Notification object
-   *
-   * @example session.deleteNotification(notification)
-   */
   deleteNotification(notification) {
     const string = JSON.stringify(notification);
-    const index = this.notifications.findIndex((element) => JSON.stringify(element) === string);
+    const index = this.notifications.findIndex(
+      (element) => JSON.stringify(element) === string,
+    );
     this.notifications.splice(index, 1);
   }
 }

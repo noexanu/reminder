@@ -12,6 +12,7 @@
   "rules": {
     "linebreak-style": "off",
     "import/extensions": "off",
+    // "no-param-reassign": ["error", { "props": false }],
     "no-underscore-dangle": ["error", { "enforceInMethodNames": false }]
   }
 }
