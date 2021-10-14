@@ -26,7 +26,6 @@ export default class UI extends UIProto {
   replyWithTime = (ctx, session) => {
     const data = JSON.parse(ctx.update.callback_query.data);
     this.replyWithInlineKeyboard(ctx, 'some text', new Time(session.language).create(data.date));
-    // UI.editMessage(ctx, 'now choose time');
   }
 
   updateTime = (ctx, session) => {

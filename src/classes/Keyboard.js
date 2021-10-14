@@ -1,26 +1,26 @@
 import Locale from './Locale.js';
 
 export default class Keyboard extends Locale {
-  #KEYS = [];
+  #MARKUP;
 
   get keys() {
-    return this.#KEYS;
+    return this.#MARKUP;
   }
 
   createKey(text, data = {}) {
     try {
-      this.#KEYS[this.#KEYS.length - 1].push({ text, callback_data: JSON.stringify(data) });
+      this.#MARKUP[this.#MARKUP.length - 1].push({ text, callback_data: JSON.stringify(data) });
     } catch {
       this.createRow();
-      this.#KEYS[this.#KEYS.length - 1].push({ text, callback_data: JSON.stringify(data) });
+      this.#MARKUP[this.#MARKUP.length - 1].push({ text, callback_data: JSON.stringify(data) });
     }
   }
 
   createRow() {
-    this.#KEYS.push([]);
+    this.#MARKUP.push([]);
   }
 
   clear() {
-    this.#KEYS = [];
+    this.#MARKUP = [];
   }
 }

@@ -43,7 +43,7 @@ export default class Time extends Keyboard {
     });
   }
 
-  create(date) {
+  create(date = new Date()) {
     const dateObj = new Date(date);
     const hours = dateObj.getHours();
     const minutes = dateObj.getMinutes();

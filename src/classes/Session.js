@@ -1,8 +1,10 @@
+import Notification from './Notification.js';
+
 export default class Session {
   constructor(userID, language) {
     this.userID = userID;
     this.language = language;
-    this.draft = {};
+    this.draft = new Notification();
     this.notifications = [];
   }
 

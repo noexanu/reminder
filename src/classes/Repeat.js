@@ -16,8 +16,8 @@ export default class Repeat extends Keyboard {
       const value = number - 1 + index;
       if (value === Infinity && index % 3 === 0) return maxValue;
       if (value === Infinity && index % 3 === 2) return minValue;
-      if (value < minValue) return Infinity;
       if (value > maxValue) return Infinity;
+      if (value < minValue) return Infinity;
       return value;
     });
 
@@ -42,11 +42,9 @@ export default class Repeat extends Keyboard {
     });
   }
 
-  create(value = 1) {
-    const number = value === null ? Infinity : value;
-
+  create(number = 1) {
     this.clear();
-    this.#CREATE(number);
+    this.#CREATE(number === null ? Infinity : number);
     return this.keys;
   }
 }

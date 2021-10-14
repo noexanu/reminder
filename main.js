@@ -7,6 +7,9 @@ import Notifier from './src/classes/Notifier.js';
 import Notification from './src/classes/Notification.js';
 import UI from './src/classes/UI.js';
 
+import Router from './src/classes/Router.js';
+import CreateComplex from './src/classes/CreateComplex.js';
+
 Locale.loadFiles();
 
 const config = dotenv.config().parsed;
@@ -14,6 +17,8 @@ const bot = new Telegraf(config.TOKEN);
 const sessions = [];
 const notifier = new Notifier();
 const ui = new UI();
+
+const router = new Router();
 
 // Execution -  is a function, which executes on every notifier cicle
 const execution = () => {
@@ -47,8 +52,9 @@ const execution = () => {
 
 bot.start((ctx) => {
   const userID = ctx.update.message.from.id;
-  const language = ctx.update.message.from.language_code ?? 'en';
-  if (!sessions.find((session) => session.userID === userID)) {
+  const currentSession = sessions.find((session) => session.userID === userID);
+  if (!currentSession) {
+    const language = ctx.update.message.from.language_code ?? 'en';
     sessions.push(new Session(userID, language));
   }
   ui.start(ctx);
@@ -57,49 +63,40 @@ bot.start((ctx) => {
 bot.hears('Create', (ctx) => {
   const userID = ctx.update.message.from.id;
   const currentSession = sessions.find((session) => session.userID === userID);
-  ui.replyWithCalendar(ctx, currentSession);
+  router.setAndExecute(CreateComplex, ctx, currentSession);
 });
+
+// bot.hears('Create complex', (ctx) => {
+//   // const userID = ctx.update.message.from.id;
+//   // const currentSession = sessions.find((session) => session.userID === userID);
+//   // ui.replyWithCalendar(ctx, currentSession);
+// });
+
+// bot.hears('Settings', (ctx) => {
+//   // const userID = ctx.update.message.from.id;
+//   // const currentSession = sessions.find((session) => session.userID === userID);
+//   // ui.replyWithCalendar(ctx, currentSession);
+// });
+
+// bot.hears('See all', (ctx) => {
+//   // const userID = ctx.update.message.from.id;
+//   // const currentSession = sessions.find((session) => session.userID === userID);
+//   // ui.replyWithCalendar(ctx, currentSession);
+// });
+
+// bot.hears('Delete', (ctx) => {
+//   // const userID = ctx.update.message.from.id;
+//   // const currentSession = sessions.find((session) => session.userID === userID);
+//   // ui.replyWithCalendar(ctx, currentSession);
+// });
 
 bot.on('callback_query', async (ctx) => {
   await ctx.answerCbQuery();
 
-  const data = JSON.parse(ctx.update.callback_query.data);
-
   const userID = ctx.update.callback_query.from.id;
   const currentSession = sessions.find((session) => session.userID === userID);
-  const { draft } = currentSession;
 
-  switch (true) {
-    case (data.sender === 'calendar' && data.method === 'update'):
-      ui.updateCalendar(ctx, currentSession);
-      break;
-    case (data.sender === 'calendar' && data.method === 'next'):
-      draft.date = data.date;
-      ui.replyWithTime(ctx, currentSession);
-      break;
-    case (data.sender === 'time' && data.method === 'update'):
-      ui.updateTime(ctx, currentSession);
-      break;
-    case (data.sender === 'time' && data.method === 'next'):
-      draft.date = data.date;
-      ui.replyWithRepeat(ctx, currentSession);
-      break;
-    case (data.sender === 'repeat' && data.method === 'update'):
-      ui.updateRepeat(ctx, currentSession);
-      break;
-    case (data.sender === 'repeat' && data.method === 'next'):
-      draft.repeat = data.repeat;
-      ui.replyWithInterval(ctx, currentSession);
-      break;
-    case (data.sender === 'interval' && data.method === 'update'):
-      ui.updateInterval(ctx, currentSession);
-      break;
-    case (data.sender === 'interval' && data.method === 'next'):
-      draft.delay = data.delay;
-      ui.replyWithEnterText(ctx, currentSession);
-      break;
-    default:
-  }
+  router.executeStrategy(ctx, currentSession);
 });
 
 bot.on('message', (ctx) => {

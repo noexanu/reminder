@@ -1,4 +1,4 @@
-export default class UI {
+export default class UIProto {
   replyWithKeyboard = (ctx, text, keyboard) => {
     ctx.reply(text, {
       reply_markup: {

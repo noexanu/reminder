@@ -13,10 +13,9 @@ export default class Interval extends Keyboard {
 
     // Create date array
     const values = [...Array(3)].map((currentValue, index) => {
-      const { length } = units;
       const value = units.indexOf(unit) - 1 + index;
-      if (value < 0) return units[length - 1];
-      if (value > length - 1) return units[0];
+      if (value < 0) return units[units.length - 1];
+      if (value > units.length - 1) return units[0];
       return units[value];
     });
 
