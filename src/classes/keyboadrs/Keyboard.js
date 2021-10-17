@@ -1,4 +1,4 @@
-import Locale from './Locale.js';
+import Locale from '../Locale.js';
 
 export default class Keyboard extends Locale {
   #MARKUP;

@@ -1,9 +1,9 @@
 import UIProto from './UIProto.js';
 
-import Calendar from './Calendar.js';
-import Time from './Time.js';
-import Repeat from './Repeat.js';
-import Interval from './Interval.js';
+import Calendar from './keyboadrs/Calendar.js';
+import Time from './keyboadrs/Time.js';
+import Repeat from './keyboadrs/Repeat.js';
+import Interval from './keyboadrs/Interval.js';
 
 export default class UI extends UIProto {
   start = (ctx) => {

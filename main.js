@@ -5,10 +5,9 @@ import Locale from './src/classes/Locale.js';
 import Session from './src/classes/Session.js';
 import Notifier from './src/classes/Notifier.js';
 import Notification from './src/classes/Notification.js';
-import UI from './src/classes/UI.js';
 
 import Router from './src/classes/Router.js';
-import CreateComplex from './src/classes/CreateComplex.js';
+import CreateComplex from './src/classes/strategies/CreateComplex.js';
 
 Locale.loadFiles();
 
@@ -16,7 +15,6 @@ const config = dotenv.config().parsed;
 const bot = new Telegraf(config.TOKEN);
 const sessions = [];
 const notifier = new Notifier();
-const ui = new UI();
 
 const router = new Router();
 
@@ -57,61 +55,34 @@ bot.start((ctx) => {
     const language = ctx.update.message.from.language_code ?? 'en';
     sessions.push(new Session(userID, language));
   }
-  ui.start(ctx);
+  ctx.reply('some text', {
+    reply_markup: {
+      keyboard: [
+        ['Create', 'Delete'],
+        ['See all', 'Settings'],
+      ],
+      resize_keyboard: true,
+    },
+  });
 });
 
 bot.hears('Create', (ctx) => {
   const userID = ctx.update.message.from.id;
   const currentSession = sessions.find((session) => session.userID === userID);
-  router.setAndExecute(CreateComplex, ctx, currentSession);
+  router.setAndExecute(new CreateComplex(), ctx, currentSession);
 });
-
-// bot.hears('Create complex', (ctx) => {
-//   // const userID = ctx.update.message.from.id;
-//   // const currentSession = sessions.find((session) => session.userID === userID);
-//   // ui.replyWithCalendar(ctx, currentSession);
-// });
-
-// bot.hears('Settings', (ctx) => {
-//   // const userID = ctx.update.message.from.id;
-//   // const currentSession = sessions.find((session) => session.userID === userID);
-//   // ui.replyWithCalendar(ctx, currentSession);
-// });
-
-// bot.hears('See all', (ctx) => {
-//   // const userID = ctx.update.message.from.id;
-//   // const currentSession = sessions.find((session) => session.userID === userID);
-//   // ui.replyWithCalendar(ctx, currentSession);
-// });
-
-// bot.hears('Delete', (ctx) => {
-//   // const userID = ctx.update.message.from.id;
-//   // const currentSession = sessions.find((session) => session.userID === userID);
-//   // ui.replyWithCalendar(ctx, currentSession);
-// });
 
 bot.on('callback_query', async (ctx) => {
   await ctx.answerCbQuery();
-
   const userID = ctx.update.callback_query.from.id;
   const currentSession = sessions.find((session) => session.userID === userID);
-
   router.executeStrategy(ctx, currentSession);
 });
 
 bot.on('message', (ctx) => {
   const userID = ctx.update.message.from.id;
   const currentSession = sessions.find((session) => session.userID === userID);
-  const { draft } = currentSession;
-
-  const isReply = !!ctx.update.message.reply_to_message;
-  if (isReply) {
-    draft.text = ctx.update.message.text;
-    currentSession.addNotification(draft);
-    ctx.reply('prinial');
-  } else {
-    ctx.reply('nie jebu szo tam');
-  }
+  router.executeStrategy(ctx, currentSession);
 });
 
 notifier.start(execution);
