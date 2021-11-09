@@ -1,4 +1,4 @@
-import UIProto from '../UIProto.js';
+import UIProto from './UIProto.js';
 
 export default class TextReply extends UIProto {
   reply(ctx, session) {

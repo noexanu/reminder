@@ -22,7 +22,7 @@
     "sa",
     "su"
   ],
-  "units": [
+  "timeUnits": [
     "minute",
     "hour",
     "day",
