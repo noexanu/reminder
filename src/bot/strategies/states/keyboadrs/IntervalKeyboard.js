@@ -3,7 +3,7 @@ import Locale from '../../../../locale/Locale.js';
 
 const DEFAULT_UNIT_INDEX = 2;
 
-export default class Interval extends Keyboard {
+export default class IntervalKeyboard extends Keyboard {
   createLayout(unitIndex = DEFAULT_UNIT_INDEX) {
     const { timeUnits } = Locale.languages[this.languageCode];
 

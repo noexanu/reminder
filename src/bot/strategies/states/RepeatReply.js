@@ -1,14 +1,24 @@
-import UIProto from './UIProto.js';
-import Repeat from './keyboadrs/Repeat.js';
+import ContextHelper from '../../ContextHelper.js';
+import Repeat from './keyboadrs/RepeatKeyboard.js';
 
-export default class RepeatReply extends UIProto {
-  reply(ctx, session) {
-    const data = JSON.parse(ctx.update.callback_query.data);
-    this.editMessage(ctx, 'some text', new Repeat(session.language).createLayout(data.repeat));
+export default class RepeatReply {
+  static reply(ctx, session) {
+    const { repeat } = ContextHelper.parseData(ctx);
+    const methodProperties = [
+      ctx,
+      'choose number of repeats',
+      new Repeat(session.language).createLayout(repeat),
+    ];
+
+    if (ContextHelper.isCallBack(ctx)) {
+      ContextHelper.editMessage(...methodProperties);
+    } else {
+      ContextHelper.replyWithInlineKeyboard(...methodProperties);
+    }
   }
 
-  update(ctx, session) {
-    const data = JSON.parse(ctx.update.callback_query.data);
-    this.editInlineKeyboard(ctx, new Repeat(session.language).createLayout(data.repeat));
+  static update(ctx, session) {
+    const { repeat } = ContextHelper.parseData(ctx);
+    ContextHelper.editInlineKeyboard(ctx, new Repeat(session.language).createLayout(repeat));
   }
 }

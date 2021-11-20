@@ -9,7 +9,30 @@ export default class Notifier {
     this.delay = delay;
   }
 
-  timer;
+  #TIMER;
+
+  #GET_DATE_PARAMETERS = (dateObj) => ({
+    year: dateObj.getFullYear(),
+    month: dateObj.getMonth(),
+    day: dateObj.getDate(),
+    hours: dateObj.getHours(),
+    minutes: dateObj.getMinutes(),
+  });
+
+  #GET_NEXT_DATE = (date, delay) => {
+    const {
+      year, month, day, hours, minutes,
+    } = this.#GET_DATE_PARAMETERS(new Date(date));
+
+    if (delay === 0) return new Date(year, month, day, hours, minutes + 1).getTime(); // Minute
+    if (delay === 1) return new Date(year, month, day, hours + 1, minutes).getTime(); // Hour
+    if (delay === 2) return new Date(year, month, day + 1, hours, minutes).getTime(); // Day
+    if (delay === 3) return new Date(year, month, day + 7, hours, minutes).getTime(); // Week
+    if (delay === 4) return new Date(year, month + 1, day, hours, minutes).getTime(); // Month
+    if (delay === 5) return new Date(year + 1, month, day, hours, minutes).getTime(); // Year
+
+    return date;
+  };
 
   notify = async () => {
     const sessions = await DataBase.getAllSessions();
@@ -17,24 +40,30 @@ export default class Notifier {
 
     sessions.forEach((session) => {
       session.notifications.forEach((notification) => {
-        if (notification.date > currentDate) return;
+        const {
+          date, text, repeat, delay,
+        } = notification;
+
+        if (date > currentDate) return;
 
         // Send notification message to user
-        this.bot.telegram.sendMessage(session.userID, notification.text);
+        this.bot.telegram.sendMessage(session.userID, text);
 
         // Create a new notification if it should be repeated some times
-        if (notification.repeat > 1) {
+        if (repeat > 1 || repeat === 'Infinity') {
           session.addNotification(
             new Notification(
-              notification.date + 5000,
-              notification.text,
-              notification.repeat - 1,
-              notification.delay,
+              this.#GET_NEXT_DATE(date, delay),
+              text,
+              repeat === 'Infinity'
+                ? 'Infinity'
+                : repeat - 1,
+              delay,
             ),
           );
         }
 
-        // Delete old notification
+        // Delete current notification
         session.deleteNotification(notification);
       });
       DataBase.updateSession(session);
@@ -43,10 +72,10 @@ export default class Notifier {
 
   start() {
     this.stop();
-    this.timer = setInterval(this.notify, this.delay);
+    this.#TIMER = setInterval(this.notify, this.delay);
   }
 
   stop() {
-    clearTimeout(this.timer);
+    clearTimeout(this.#TIMER);
   }
 }

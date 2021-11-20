@@ -5,49 +5,58 @@ import CalendarReply from './states/CalendarReply.js';
 import TimeReply from './states/TimeReply.js';
 import RepeatReply from './states/RepeatReply.js';
 import IntervalReply from './states/IntervalReply.js';
-import TextReply from './states/TextReply.js';
+import InputTextReply from './states/InputTextReply.js';
+
+import ConfirmCreationReply from './states/ConfirmCreationReply.js';
+import CreationErrorReply from './states/CreationErrorReply.js';
 
 export default class CreateComplexNotification {
   static #STRATEGY_STATES = [
-    new CalendarReply(),
-    new TimeReply(),
-    new RepeatReply(),
-    new IntervalReply(),
-    new TextReply(),
+    CalendarReply,
+    TimeReply,
+    RepeatReply,
+    IntervalReply,
+    InputTextReply,
   ];
 
   static sign = () => 'createComplex';
 
-  static execute = (ctx, sessionObj) => {
-    const session = sessionObj;
-    const { currentStateIndex } = session;
-    const currentState = CreateComplexNotification.#STRATEGY_STATES[currentStateIndex];
-    const { sender, method, ...dataField } = ContextHelper.parseCallBackData(ctx);
+  static execute = (ctx, session) => {
+    const sessionObj = session;
+    const { sender, method, ...dataField } = ContextHelper.parseData(ctx);
 
     if (ContextHelper.isReply(ctx)) {
-      session.notificationInDraft.text = ctx.update.message.text;
-      session.addNotification(session.notificationInDraft);
-      DataBase.updateSession(session);
+      sessionObj.notificationInDraft.text = ctx.update.message.text;
+      const { date } = sessionObj.notificationInDraft;
 
-      ctx.reply('успех');
-      return;
-    }
+      if (date) {
+        sessionObj.addNotification(sessionObj.notificationInDraft);
+        DataBase.updateSession(sessionObj);
+        ConfirmCreationReply.reply(ctx, session);
+        return;
+      }
 
-    if (method === 'update') {
-      currentState.update(ctx, session);
-      return;
+      CreationErrorReply.reply(ctx, session);
+      sessionObj.reserTemporaryData();
     }
 
     if (method === 'next') {
-      session.currentStateIndex += 1;
-      Object.assign(session.notificationInDraft, dataField);
-      DataBase.updateSession(session);
-
-      const nextState = CreateComplexNotification.#STRATEGY_STATES[currentStateIndex + 1];
-      nextState.reply(ctx, session);
-      return;
+      sessionObj.currentStateIndex += 1;
+      Object.assign(sessionObj.notificationInDraft, dataField);
     }
 
-    currentState.reply(ctx, session);
+    if (method === 'back') {
+      sessionObj.currentStateIndex -= 1;
+    }
+
+    DataBase.updateSession(sessionObj);
+    const currentState = CreateComplexNotification
+      .#STRATEGY_STATES[sessionObj.currentStateIndex];
+
+    if (method === 'update') {
+      currentState.update(ctx, sessionObj);
+    } else {
+      currentState.reply(ctx, sessionObj);
+    }
   };
 }

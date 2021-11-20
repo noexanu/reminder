@@ -1,7 +1,7 @@
 import Keyboard from './prototype/Keyboard.js';
 import Locale from '../../../../locale/Locale.js';
 
-export default class Calendar extends Keyboard {
+export default class CalendarKeyboard extends Keyboard {
   #GET_START_DAY_OF_MONTH = (year, month) => {
     const lastDayOfPreviousMonth = new Date(year, month, 0);
     const daysInPreviousMonth = lastDayOfPreviousMonth.getDate();
@@ -12,8 +12,6 @@ export default class Calendar extends Keyboard {
   #GET_DATE_PARAMETERS = (dateObj) => ({
     year: dateObj.getFullYear(),
     month: dateObj.getMonth(),
-    hours: dateObj.getHours(),
-    minutes: dateObj.getMinutes(),
   })
 
   #GET_CURRENT_TIME = () => {

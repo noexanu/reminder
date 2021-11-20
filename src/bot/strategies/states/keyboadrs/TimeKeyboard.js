@@ -1,14 +1,14 @@
 import Keyboard from './prototype/Keyboard.js';
 import Locale from '../../../../locale/Locale.js';
 
-export default class Time extends Keyboard {
+export default class TimeKeyboard extends Keyboard {
   #GET_DATE_TIME = (dateObj) => ({
     hours: dateObj.getHours(),
     minutes: dateObj.getMinutes(),
   });
 
   createLayout(date) {
-    const dateObj = new Date(date);
+    const dateObj = new Date(date ?? new Date());
     const { hours, minutes } = this.#GET_DATE_TIME(dateObj);
 
     this.clearLayout();

@@ -10,18 +10,18 @@ export default class Session {
     this.notifications = [];
   }
 
-  reserTemporaryFields() {
+  reserTemporaryData() {
     this.currentStateIndex = 0;
     this.notificationInDraft = new Notification();
   }
 
   setStrategy(sign) {
-    this.reserTemporaryFields();
+    this.reserTemporaryData();
     this.currentStrategy = sign;
   }
 
   addNotification(notification) {
-    this.reserTemporaryFields();
+    this.reserTemporaryData();
 
     const largerDateNotificationIndex = this.notifications.findIndex(
       (element) => notification.date < element.date,

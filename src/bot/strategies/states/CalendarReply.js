@@ -1,13 +1,13 @@
-import UIProto from './UIProto.js';
-import Calendar from './keyboadrs/Calendar.js';
+import ContextHelper from '../../ContextHelper.js';
+import Calendar from './keyboadrs/CalendarKeyboard.js';
 
-export default class CalendarReply extends UIProto {
-  reply(ctx, session) {
-    this.replyWithInlineKeyboard(ctx, 'some text', new Calendar(session.language).createLayout());
+export default class CalendarReply {
+  static reply(ctx, session) {
+    ContextHelper.replyWithInlineKeyboard(ctx, 'choose date', new Calendar(session.language).createLayout());
   }
 
-  update(ctx, session) {
-    const data = JSON.parse(ctx.update.callback_query.data);
-    this.editInlineKeyboard(ctx, new Calendar(session.language).createLayout(data.date));
+  static update(ctx, session) {
+    const { date } = ContextHelper.parseData(ctx);
+    ContextHelper.editInlineKeyboard(ctx, new Calendar(session.language).createLayout(date));
   }
 }

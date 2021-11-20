@@ -9,15 +9,10 @@ const strategies = [
   CreateComplexNotification,
 ];
 
-const keyboard = {
-  reply_markup: {
-    keyboard: [
-      ['Create', 'Delete'],
-      ['See all', 'Settings'],
-    ],
-    resize_keyboard: true,
-  },
-};
+const keyboard = [
+  ['Create', 'Delete'],
+  ['See all', 'Settings'],
+];
 
 export default class Bot extends Telegraf {
   #GET_SESSION = (ctx) => {
@@ -35,7 +30,7 @@ export default class Bot extends Telegraf {
   registerListeners() {
     this.start(async (ctx) => {
       if (!(await this.#GET_SESSION(ctx))) this.#CREATE_SESSION(ctx);
-      ctx.reply('some text', keyboard);
+      ContextHelper.replyWithKeyboard(ctx, 'some text', keyboard);
     });
 
     this.hears('Create', async (ctx) => {

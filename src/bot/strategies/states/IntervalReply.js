@@ -1,14 +1,24 @@
-import UIProto from './UIProto.js';
-import Interval from './keyboadrs/Interval.js';
+import ContextHelper from '../../ContextHelper.js';
+import Interval from './keyboadrs/IntervalKeyboard.js';
 
-export default class IntervalReply extends UIProto {
-  reply(ctx, session) {
-    const data = JSON.parse(ctx.update.callback_query.data);
-    this.editMessage(ctx, 'some text', new Interval(session.language).createLayout(data.delay));
+export default class IntervalReply {
+  static reply(ctx, session) {
+    const { delay } = ContextHelper.parseData(ctx);
+    const methodProperties = [
+      ctx,
+      'choose interval',
+      new Interval(session.language).createLayout(delay),
+    ];
+
+    if (ContextHelper.isCallBack(ctx)) {
+      ContextHelper.editMessage(...methodProperties);
+    } else {
+      ContextHelper.replyWithInlineKeyboard(...methodProperties);
+    }
   }
 
-  update(ctx, session) {
-    const data = JSON.parse(ctx.update.callback_query.data);
-    this.editInlineKeyboard(ctx, new Interval(session.language).createLayout(data.delay));
+  static update(ctx, session) {
+    const { delay } = ContextHelper.parseData(ctx);
+    ContextHelper.editInlineKeyboard(ctx, new Interval(session.language).createLayout(delay));
   }
 }
