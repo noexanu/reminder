@@ -1,52 +1,64 @@
 import { Telegraf } from 'telegraf';
-import DataBase from '../database/DataBase.js';
-import ContextHelper from './ContextHelper.js';
 import Session from './session/Session.js';
+import MainKeyboard from './keyboard/MainKeyboard.js';
+import ContextHelper from './helpers/contextHelper/ContextHelper.js';
+import Replier from './services/Replier.js';
+import Locale from '../locale/Locale.js';
 
 import CreateComplexNotification from './strategies/CreateComplexNotification.js';
 
-const strategies = [
-  CreateComplexNotification,
-];
-
-const keyboard = [
-  ['Create', 'Delete'],
-  ['See all', 'Settings'],
-];
+const DEFAULT_SESSION_LANGUAGE_CODE = 'en';
 
 export default class Bot extends Telegraf {
-  #GET_SESSION = (ctx) => {
-    const userID = ContextHelper.getUserID(ctx);
-    return DataBase.getSession(userID);
+  static #strategies = [
+    CreateComplexNotification,
+  ];
+
+  static #createSession = async (ctx) => {
+    const { userID, languageCode } = ContextHelper.getUserData(ctx);
+    const languageCodeIsSupported = await Locale.languageIsSupported(languageCode);
+    const resultLanguageCode = languageCodeIsSupported
+      ? languageCode
+      : DEFAULT_SESSION_LANGUAGE_CODE;
+    return new Session(userID, resultLanguageCode).saveToDataBase();
   };
 
-  #CREATE_SESSION = (ctx) => {
-    const sender = ctx.update.message.from;
-    const userID = sender.id;
-    const language = sender.language_code;
-    DataBase.createSession(new Session(userID, language));
+  static #getSession = (ctx) => {
+    const { userID } = ContextHelper.getUserData(ctx);
+    return Session.getSessionByUserID(userID);
   };
 
-  registerListeners() {
+  async registerListeners() {
+    const keyboardActionsCollection = await Locale
+      .getMultiLanguageCollection('keyboardActions');
+
     this.start(async (ctx) => {
-      if (!(await this.#GET_SESSION(ctx))) this.#CREATE_SESSION(ctx);
-      ContextHelper.replyWithKeyboard(ctx, 'some text', keyboard);
+      const session = await Bot.#getSession(ctx) ?? await Bot.#createSession(ctx);
+      const { text } = await Locale.loadLanguage(session.languageCode);
+      Replier.replyWithKeyboard(
+        ctx,
+        text.greeting[Math.floor(Math.random() * (text.greeting.length))],
+        await MainKeyboard.getKeyboardLayout(session.languageCode),
+      );
     });
 
-    this.hears('Create', async (ctx) => {
-      const session = await this.#GET_SESSION(ctx);
-      session.setStrategy(CreateComplexNotification.sign());
-      DataBase.updateSession(session);
+    this.hears(keyboardActionsCollection.create, async (ctx) => {
+      const session = await Bot.#getSession(ctx);
+      session
+        .changeStrategy(CreateComplexNotification.sign())
+        .updateInDataBase();
       CreateComplexNotification.execute(ctx, session);
     });
 
     this.on(['callback_query', 'message'], async (ctx) => {
       if (ContextHelper.isCallBack(ctx)) ctx.answerCbQuery();
-      const session = await this.#GET_SESSION(ctx);
-      const currentStrategy = strategies.find(
+
+      const session = await Bot.#getSession(ctx);
+      const currentStrategy = Bot.#strategies.find(
         (strategy) => strategy.sign() === session.currentStrategy,
       );
-      currentStrategy.execute(ctx, session);
+
+      if (currentStrategy) currentStrategy.execute(ctx, session);
     });
   }
 }

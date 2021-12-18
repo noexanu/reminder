@@ -1,7 +1,5 @@
-const DEFAULT_KEYBOARD_LANGUAGE = 'en';
-
 export default class Keyboard {
-  constructor(languageCode = DEFAULT_KEYBOARD_LANGUAGE) {
+  constructor(languageCode) {
     this.languageCode = languageCode;
     this.layout = [];
   }
@@ -9,13 +7,16 @@ export default class Keyboard {
   addNewKey(text, data = {}) {
     if (this.layout.length === 0) this.addNewRow();
     this.layout[this.layout.length - 1].push({ text, callback_data: JSON.stringify(data) });
+    return this;
   }
 
   addNewRow() {
     this.layout.push([]);
+    return this;
   }
 
   clearLayout() {
     this.layout = [];
+    return this;
   }
 }

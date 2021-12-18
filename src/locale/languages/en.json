@@ -29,5 +29,37 @@
     "week",
     "month",
     "year"
-  ]
+  ],
+  "keyboardActions": {
+    "create": "Create",
+    "remove": "Delete",
+    "seeAll": "See all",
+    "settings": "Settings"
+  },
+  "text": {
+    "greeting": [
+      "Witam! Aby rozpocząć pracę ze mną, proszę użyć klawiatury poniżej."
+    ],
+    "error": [
+      "Oops... Something went wrong. Try again."
+    ],
+    "success": [
+      "Great! I will remind you later."
+    ],
+    "calendar": [
+      "Please, choose notification date..."
+    ],
+    "time": [
+      "Please, choose notification time..."
+    ],
+    "inputText": [
+      "What to remind about?"
+    ],
+    "interval": [
+      "At what interval?"
+    ],
+    "repeat": [
+      "How many times i should repeat?"
+    ]
+  }
 }

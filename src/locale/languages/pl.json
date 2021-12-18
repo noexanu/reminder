@@ -29,5 +29,37 @@
     "tydzień",
     "miesiąc",
     "rok"
-  ]
+  ],
+  "keyboardActions": {
+    "create": "Utwórz",
+    "remove": "Usuń",
+    "seeAll": "Wyświetl wszystko",
+    "settings": "Ustawienia"
+  },
+  "text": {
+    "greeting": [
+      "Hello! To start working with me, please use the keyboard below."
+    ],
+    "error": [
+      "Ups! Coś poszło nie tak. Spróbuj ponownie."
+    ],
+    "success": [
+      "Bardzo dobrze! Będę przypominał ci później."
+    ],
+    "calendar": [
+      "Proszę wybrać datę..."
+    ],
+    "time": [
+      "Proszę wybrać czas..."
+    ],
+    "inputText": [
+      "O czym przypomnieć?"
+    ],
+    "interval": [
+      "W jakim odstępie?"
+    ],
+    "repeat": [
+      "Ile razy muszę powtórzyć?"
+    ]
+  }
 }

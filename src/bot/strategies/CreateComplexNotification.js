@@ -1,17 +1,17 @@
-import DataBase from '../../database/DataBase.js';
-import ContextHelper from '../ContextHelper.js';
+import Session from '../session/Session.js';
+import ContextHelper from '../helpers/contextHelper/ContextHelper.js';
 
-import CalendarReply from './states/CalendarReply.js';
-import TimeReply from './states/TimeReply.js';
-import RepeatReply from './states/RepeatReply.js';
-import IntervalReply from './states/IntervalReply.js';
-import InputTextReply from './states/InputTextReply.js';
+import CalendarReply from './replies/CalendarReply.js';
+import TimeReply from './replies/TimeReply.js';
+import RepeatReply from './replies/RepeatReply.js';
+import IntervalReply from './replies/IntervalReply.js';
+import InputTextReply from './replies/InputTextReply.js';
 
-import ConfirmCreationReply from './states/ConfirmCreationReply.js';
-import CreationErrorReply from './states/CreationErrorReply.js';
+import ConfirmCreationReply from './replies/ConfirmCreationReply.js';
+import CreationErrorReply from './replies/CreationErrorReply.js';
 
 export default class CreateComplexNotification {
-  static #STRATEGY_STATES = [
+  static #replyStates = [
     CalendarReply,
     TimeReply,
     RepeatReply,
@@ -19,44 +19,64 @@ export default class CreateComplexNotification {
     InputTextReply,
   ];
 
-  static sign = () => 'createComplex';
+  static #handleReply = (ctx, session) => {
+    const sessionCopy = Object.assign(new Session(), session);
+    const { notificationInDraft } = sessionCopy;
 
-  static execute = (ctx, session) => {
-    const sessionObj = session;
-    const { sender, method, ...dataField } = ContextHelper.parseData(ctx);
-
-    if (ContextHelper.isReply(ctx)) {
-      sessionObj.notificationInDraft.text = ctx.update.message.text;
-      const { date } = sessionObj.notificationInDraft;
-
-      if (date) {
-        sessionObj.addNotification(sessionObj.notificationInDraft);
-        DataBase.updateSession(sessionObj);
-        ConfirmCreationReply.reply(ctx, session);
-        return;
-      }
-
-      CreationErrorReply.reply(ctx, session);
-      sessionObj.reserTemporaryData();
+    if (notificationInDraft.date) {
+      notificationInDraft.text = ctx.update.message.text;
+      sessionCopy
+        .addNotification(notificationInDraft)
+        .updateInDataBase();
+      ConfirmCreationReply.reply(ctx, sessionCopy);
+    } else {
+      sessionCopy
+        .discardChanges()
+        .updateInDataBase();
+      CreationErrorReply.reply(ctx, sessionCopy);
     }
+  }
+
+  static #handleButtonCallBackMethod = (ctx, session) => {
+    const sessionCopy = Object.assign(new Session(), session);
+    const { notificationInDraft } = sessionCopy;
+    const { method, ...dataField } = ContextHelper.getButtonCallBackData(ctx);
 
     if (method === 'next') {
-      sessionObj.currentStateIndex += 1;
-      Object.assign(sessionObj.notificationInDraft, dataField);
+      Object.assign(notificationInDraft, dataField);
+      // Skip interval reply, if notification should be repeated once
+      sessionCopy.currentStateIndex += notificationInDraft.repeat === 1 ? 2 : 1;
+      sessionCopy.updateInDataBase();
     }
 
     if (method === 'back') {
-      sessionObj.currentStateIndex -= 1;
+      sessionCopy.currentStateIndex -= 1;
+      sessionCopy.updateInDataBase();
     }
-
-    DataBase.updateSession(sessionObj);
-    const currentState = CreateComplexNotification
-      .#STRATEGY_STATES[sessionObj.currentStateIndex];
 
     if (method === 'update') {
-      currentState.update(ctx, sessionObj);
+      CreateComplexNotification
+        .#replyStates[sessionCopy.currentStateIndex]
+        .update(ctx, sessionCopy);
     } else {
-      currentState.reply(ctx, sessionObj);
+      CreateComplexNotification
+        .#replyStates[sessionCopy.currentStateIndex]
+        .reply(ctx, sessionCopy);
+    }
+  }
+
+  static execute = (ctx, session) => {
+    const { method } = ContextHelper.getButtonCallBackData(ctx);
+
+    if (ContextHelper.isReply(ctx)) {
+      CreateComplexNotification.#handleReply(ctx, session);
+    }
+
+    // If it's a main menu button click or button callback contains method field
+    if (ctx.match || method) {
+      CreateComplexNotification.#handleButtonCallBackMethod(ctx, session);
     }
   };
+
+  static sign = () => 'createComplex';
 }

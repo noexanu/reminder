@@ -1,13 +1,40 @@
-import fs from 'fs';
+import fs from 'fs/promises';
+
+const DEFAULT_DIRECTORY = './src/locale/languages/';
 
 export default class Locale {
-  static languages;
+  static async getSupportedLanguages(directory = DEFAULT_DIRECTORY) {
+    const data = await fs.readdir(directory);
+    return data.map((currentFileName) => currentFileName.split('.')[0]);
+  }
 
-  static loadFiles(directory = './src/locale/languages/') {
-    Locale.languages = fs.readdirSync(directory).reduce((localeObj, currentFileName) => {
-      const languageProperties = JSON.parse(fs.readFileSync(directory + currentFileName));
-      const languageCode = currentFileName.substring(0, 2);
-      return { ...localeObj, [languageCode]: languageProperties };
+  static async loadLanguage(languageCode, directory = DEFAULT_DIRECTORY) {
+    const data = await fs.readFile(`${directory + languageCode}.json`);
+    return JSON.parse(data.toString());
+  }
+
+  static async languageIsSupported(languageCode, directory = DEFAULT_DIRECTORY) {
+    const supportedLanguages = await Locale.getSupportedLanguages(directory);
+    return supportedLanguages.includes(languageCode);
+  }
+
+  static async getMultiLanguageCollection(languagePropertyName, directory = DEFAULT_DIRECTORY) {
+    const supportedLanguages = await Locale.getSupportedLanguages(directory);
+
+    return supportedLanguages.reduce(async (collection, currentLanguageCode) => {
+      const actualCollection = await collection;
+      const language = await Locale.loadLanguage(currentLanguageCode, directory);
+      const languageProperty = language[languagePropertyName];
+
+      Object.entries(languageProperty).forEach(([propertyName, propertyValue]) => {
+        if (actualCollection[propertyName]) {
+          actualCollection[propertyName].push(propertyValue);
+        } else {
+          actualCollection[propertyName] = [propertyValue];
+        }
+      });
+
+      return actualCollection;
     }, {});
   }
 }
